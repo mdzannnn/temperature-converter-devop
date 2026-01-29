@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Temperature Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'Fira Code', monospace; }
+        .terminal-glow { box-shadow: 0 0 20px rgba(34, 197, 94, 0.2); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-10 text-slate-800">
+
+    <div class="max-w-5xl mx-auto space-y-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
+                    DevOps <span class="text-blue-600">TempConverter</span>
+                </h1>
+                <p class="text-slate-500 font-medium">Automated CI/CD Pipeline & Temperature Dashboard</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center gap-3">
+                <span id="pipeline-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-500">
+                    Pipeline: Idle
+                </span>
+                <div id="status-dot" class="h-3 w-3 rounded-full bg-slate-300"></div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- SECTION 1: THE APP (The Frontend) -->
+            <div class="bg-white p-8 rounded-3xl shadow-xl border-b-8 border-blue-600 space-y-8">
+                <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
+                    <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold">Live Converter</h2>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-500 uppercase mb-2">Celsius Input (°C)</label>
+                        <input type="number" id="celsiusInput" value="0"
+                            class="w-full text-4xl font-black p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white transition-all outline-none"
+                            oninput="updateConversions()">
+                        <p id="errorBox" class="hidden mt-3 text-red-500 text-sm font-semibold flex items-center gap-2">
+                            <span>⚠️</span> <span id="errorMsg"></span>
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                            <p class="text-xs font-bold text-blue-500 uppercase">Fahrenheit</p>
+                            <p id="fahrenheitVal" class="text-3xl font-black text-blue-900 mt-1">32.00°F</p>
+                        </div>
+                        <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                            <p class="text-xs font-bold text-indigo-500 uppercase">Kelvin</p>
+                            <p id="kelvinVal" class="text-3xl font-black text-indigo-900 mt-1">273.15K</p>
+                        </div>
+                    </div>
+
+                    <div id="freezingBadge" class="p-4 bg-cyan-50 border border-cyan-100 rounded-xl flex items-center gap-3 text-cyan-700 font-medium">
+                        <span class="text-xl">❄️</span>
+                        Status: Temperature is at/below freezing!
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: THE DEVOPS PIPELINE (The Backend Simulation) -->
+            <div class="bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col terminal-glow border border-slate-700">
+                <div class="bg-slate-800 p-4 flex items-center justify-between border-b border-slate-700">
+                    <div class="flex items-center gap-2">
+                        <div class="h-3 w-3 rounded-full bg-red-500"></div>
+                        <div class="h-3 w-3 rounded-full bg-yellow-500"></div>
+                        <div class="h-3 w-3 rounded-full bg-green-500"></div>
+                        <span class="ml-2 text-xs font-bold text-slate-400 mono">TERMINAL: GitHub Actions Runner</span>
+                    </div>
+                    <button onclick="runPipeline()" id="runBtn" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2">
+                        <span>▶</span> RUN PIPELINE
+                    </button>
+                </div>
+                
+                <div id="terminal" class="p-6 flex-grow mono text-xs space-y-2 overflow-y-auto max-h-[400px]">
+                    <div class="text-slate-500 italic">// Waiting for build trigger...</div>
+                </div>
+
+                <div class="p-4 bg-slate-800/50 border-t border-slate-700">
+                    <div class="flex justify-between text-[10px] text-slate-500 uppercase font-bold mb-2">
+                        <span>Orchestration: Docker v24.0</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                        <div id="progressBar" class="w-0 h-full bg-green-500 transition-all duration-500"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center text-slate-400 text-sm font-medium">
+            AY2025 DevOps Implementation Project &bull; Created for XYZ Company
+        </footer>
+    </div>
+
+    <script>
+        // --- APPLICATION LOGIC ---
+        function updateConversions() {
+            const input = document.getElementById('celsiusInput');
+            const val = parseFloat(input.value);
+            const errorBox = document.getElementById('errorBox');
+            const errorMsg = document.getElementById('errorMsg');
+            const freezingBadge = document.getElementById('freezingBadge');
+
+            // 1. Validation Logic (Defensive Programming)
+            if (isNaN(val)) {
+                showError("Input must be a numeric value");
+                return;
+            }
+            if (val < -273.15) {
+                showError("Temperature cannot be below absolute zero (-273.15°C)");
+                return;
+            }
+
+            hideError();
+
+            // 2. Calculation Logic
+            const fahrenheit = (val * 9/5) + 32;
+            const kelvin = val + 273.15;
+
+            document.getElementById('fahrenheitVal').innerText = fahrenheit.toFixed(2) + "°F";
+            document.getElementById('kelvinVal').innerText = kelvin.toFixed(2) + "K";
+
+            // 3. Logic Check (is_freezing)
+            if (val <= 0) {
+                freezingBadge.classList.remove('hidden');
+            } else {
+                freezingBadge.classList.add('hidden');
+            }
+        }
+
+        function showError(msg) {
+            const errorBox = document.getElementById('errorBox');
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.innerText = msg;
+            errorBox.classList.remove('hidden');
+            document.getElementById('fahrenheitVal').innerText = "ERR";
+            document.getElementById('kelvinVal').innerText = "ERR";
+        }
+
+        function hideError() {
+            document.getElementById('errorBox').classList.add('hidden');
+        }
+
+        // --- DEVOPS PIPELINE SIMULATION ---
+        const terminal = document.getElementById('terminal');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const badge = document.getElementById('pipeline-badge');
+        const dot = document.getElementById('status-dot');
+
+        function logToTerminal(text, color = "text-slate-300") {
+            const div = document.createElement('div');
+            div.className = color + " animate-in fade-in slide-in-from-left-2";
+            div.innerHTML = `<span class="text-slate-600">[${new Date().toLocaleTimeString()}]</span> ${text}`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function runPipeline() {
+            terminal.innerHTML = "";
+            progressBar.style.width = "0%";
+            progressPercent.innerText = "0%";
+            badge.innerText = "Pipeline: Running";
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-yellow-100 text-yellow-700";
+            dot.className = "h-3 w-3 rounded-full bg-yellow-500 animate-pulse";
+            document.getElementById('runBtn').disabled = true;
+
+            const steps = [
+                { msg: "Starting GitHub Actions Runner...", progress: 10, delay: 500 },
+                { msg: "Setting up Python 3.11 environment...", progress: 25, delay: 1000 },
+                { msg: "Installing dependencies: pip install pytest", progress: 40, delay: 1800 },
+                { msg: "Running Unit Tests in tests/test_app.py...", progress: 55, delay: 2500 },
+                { msg: "Test 1: celsius_to_fahrenheit(0) == 32 ... <span class='text-green-400'>PASSED</span>", progress: 70, delay: 3200 },
+                { msg: "Test 2: Validation Check (Absolute Zero) ... <span class='text-green-400'>PASSED</span>", progress: 85, delay: 3800 },
+                { msg: "Build successful! All 6 tests passed.", progress: 100, delay: 4500, success: true }
+            ];
+
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    logToTerminal(step.msg);
+                    progressBar.style.width = step.progress + "%";
+                    progressPercent.innerText = step.progress + "%";
+
+                    if (step.success) {
+                        badge.innerText = "Pipeline: Success";
+                        badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-100 text-green-700";
+                        dot.className = "h-3 w-3 rounded-full bg-green-500";
+                        document.getElementById('runBtn').disabled = false;
+                        logToTerminal("Deployment Complete. Application is ready.", "text-green-400 font-bold");
+                    }
+                }, step.delay);
+            });
+        }
+
+        // Initialize
+        updateConversions();
+    </script>
+</body>
+</html>
