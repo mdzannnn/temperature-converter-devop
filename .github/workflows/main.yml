@@ -6,11 +6,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
       - name: Install Pytest
         run: pip install pytest
+
       - name: Run Automated Tests
-        run: python -m pytest
+        # This line tells Python to include the Temperature_app folder in its search
+        run: |
+            export PYTHONPATH=$PYTHONPATH:$(pwd)/Temperature_app
+            python -m pytest Temperature_app/tests/
